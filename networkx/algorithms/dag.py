@@ -54,7 +54,7 @@ __all__ = ['descendants',
 chaini = chain.from_iterable
 
 
-def descendants(G, source):
+def _descendants(G, source):
     """Returns all nodes reachable from `source` in `G`.
 
     Parameters
@@ -74,7 +74,13 @@ def descendants(G, source):
     return des - {source}
 
 
-def ancestors(G, source):
+def descendants(G, source):
+    if not G.has_node(source):
+        raise nx.NetworkXError("The node %s is not in the graph." % source)
+    return _reachable_from(G, source) - {source}
+
+
+def _ancestors(G, source):
     """Returns all nodes having a path to `source` in `G`.
 
     Parameters
@@ -92,6 +98,31 @@ def ancestors(G, source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
     anc = set(n for n, d in nx.shortest_path_length(G, target=source).items())
     return anc - {source}
+
+
+def ancestors(G, source):
+    if not G.has_node(source):
+        raise nx.NetworkXError("The node %s is not in the graph." % source)
+    return _reachable_from(G._pred, source) - {source}
+
+
+def _reachable_from(G, u):
+    visited = set([u])
+    stack = [u]
+    unvisited = len(G) - 1
+    while stack:
+        node = stack.pop()
+        for v in G[node]:
+            if not v in visited:
+                visited.add(v)
+                stack.append(v)
+                unvisited -= 1
+                if not unvisited:
+                    return visited
+    return visited
+
+
+#__all__.extend(["descendants_dev", "ancestors_dev"])
 
 
 def has_cycle(G):
