@@ -74,12 +74,6 @@ def _descendants(G, source):
     return des - {source}
 
 
-def descendants(G, source):
-    if not G.has_node(source):
-        raise nx.NetworkXError("The node %s is not in the graph." % source)
-    return _reachable_from(G, source) - {source}
-
-
 def _ancestors(G, source):
     """Returns all nodes having a path to `source` in `G`.
 
@@ -98,6 +92,13 @@ def _ancestors(G, source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
     anc = set(n for n, d in nx.shortest_path_length(G, target=source).items())
     return anc - {source}
+
+'''
+'''
+def descendants(G, source):
+    if not G.has_node(source):
+        raise nx.NetworkXError("The node %s is not in the graph." % source)
+    return _reachable_from(G, source) - {source}
 
 
 def ancestors(G, source):
@@ -123,7 +124,6 @@ def _reachable_from(G, u):
 
 
 #__all__.extend(["descendants_dev", "ancestors_dev"])
-
 
 def has_cycle(G):
     """Decides whether the directed graph has a cycle."""
