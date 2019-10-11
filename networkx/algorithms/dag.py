@@ -68,6 +68,14 @@ def descendants(G, source):
     set()
         The descendants of `source` in `G`
     """
+    f = nx.algorithms.shortest_paths.unweighted._single_shortest_path_length
+    if not G.has_node(source):
+        raise nx.NetworkXError("The node %s is not in the graph." % source)
+    des = set(n for n, d in nx.shortest_path_length(G, source=source).items())
+    return des - {source}
+    
+
+def descendants_dev(G, source):
     if not G.has_node(source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
     return _reachable_from(G, source) - {source}
@@ -89,7 +97,16 @@ def ancestors(G, source):
     """
     if not G.has_node(source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
+    anc = set(n for n, d in nx.shortest_path_length(G, target=source).items())
+    return anc - {source}
+
+
+def ancestors_dev(G, source):
+    if not G.has_node(source):
+        raise nx.NetworkXError("The node %s is not in the graph." % source)
     return _reachable_from(G._pred, source) - {source}
+
+__all__.extend(["descendants_dev", "ancestors_dev"])
 
 def _reachable_from(G, source):
     """

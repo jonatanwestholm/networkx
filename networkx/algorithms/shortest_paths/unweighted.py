@@ -10,6 +10,7 @@
 """
 Shortest path algorithms for unweighted graphs.
 """
+from collections import deque
 import networkx as nx
 
 __all__ = ['bidirectional_shortest_path',
@@ -66,34 +67,72 @@ def single_source_shortest_path_length(G, source, cutoff=None):
     return dict(_single_shortest_path_length(G.adj, nextlevel, cutoff))
 
 
-def _single_shortest_path_length(adj, firstlevel, cutoff):
-    """Yields (node, level) in a breadth first search
+if 0:
+    def _single_shortest_path_length(adj, firstlevel, cutoff):
+        """Yields (node, level) in a breadth first search
 
-    Shortest Path Length helper function
-    Parameters
-    ----------
-        adj : dict
-            Adjacency dict or view
-        firstlevel : dict
-            starting nodes, e.g. {source: 1} or {target: 1}
-        cutoff : int or float
-            level at which we stop the process
-    """
-    seen = {}                  # level (number of hops) when seen in BFS
-    level = 0                  # the current level
-    nextlevel = firstlevel     # dict of nodes to check at next level
+        Shortest Path Length helper function
+        Parameters
+        ----------
+            adj : dict
+                Adjacency dict or view
+            firstlevel : dict
+                starting nodes, e.g. {source: 1} or {target: 1}
+            cutoff : int or float
+                level at which we stop the process
+        """
+        seen = {}                  # level (number of hops) when seen in BFS
+        level = 0                  # the current level
+        nextlevel = firstlevel     # dict of nodes to check at next level
 
-    while nextlevel and cutoff >= level:
-        thislevel = nextlevel  # advance to next level
-        nextlevel = {}         # and start a new list (fringe)
-        for v in thislevel:
-            if v not in seen:
-                seen[v] = level  # set the level of vertex v
-                nextlevel.update(adj[v])  # add neighbors of v
-                yield (v, level)
-        level += 1
-    del seen
+        while nextlevel and cutoff >= level:
+            thislevel = nextlevel  # advance to next level
+            nextlevel = {}         # and start a new list (fringe)
+            for v in thislevel:
+                if v not in seen:
+                    seen[v] = level  # set the level of vertex v
+                    nextlevel.update(adj[v])  # add neighbors of v
+                    yield (v, level)
+            level += 1
+        del seen
 
+else:
+    def _single_shortest_path_length(adj, firstlevel, cutoff):
+        """Yields (node, level) in a breadth first search
+
+        Shortest Path Length helper function
+        Parameters
+        ----------
+            adj : dict
+                Adjacency dict or view
+            firstlevel : dict
+                starting nodes, e.g. {source: 1} or {target: 1}
+            cutoff : int or float
+                level at which we stop the process
+        """
+
+        # TODO: accept multiple in firstlevel
+        #       must we accept different levels in firstlevel?
+
+        #print(firstlevel)
+
+        source = next(iter(firstlevel))
+        visited = set([source])
+        dq = deque([(source, firstlevel[source])])
+        yield source, firstlevel[source] - 1
+        unvisited = len(adj) - 1
+        while dq:
+            node, level = dq.popleft()
+            if level > cutoff:
+                return
+            for v in adj[node]:
+                if not v in visited:
+                    visited.add(v)
+                    dq.append((v, level+1))
+                    yield v, level
+                    unvisited -= 1
+                    if not unvisited:
+                        return
 
 def single_target_shortest_path_length(G, target, cutoff=None):
     """Compute the shortest path lengths to target from all reachable nodes.
