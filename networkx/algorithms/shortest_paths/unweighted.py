@@ -111,15 +111,14 @@ else:
                 level at which we stop the process
         """
 
-        # TODO: accept multiple in firstlevel
-        #       must we accept different levels in firstlevel?
+        # TODO: must we accept different levels in firstlevel?
+        u = next(iter(firstlevel))
+        level = firstlevel[u]
+        assert all(level == firstlevel[v] for v in firstlevel)
 
-        #print(firstlevel)
-
-        source = next(iter(firstlevel))
-        visited = set([source])
-        dq = deque([(source, firstlevel[source])])
-        yield source, firstlevel[source] - 1
+        visited = set(firstlevel)
+        dq = deque(firstlevel.items())
+        yield from ((u, level-1) for u, level in dq)
         unvisited = len(adj) - 1
         while dq:
             node, level = dq.popleft()
@@ -133,6 +132,7 @@ else:
                     unvisited -= 1
                     if not unvisited:
                         return
+
 
 def single_target_shortest_path_length(G, target, cutoff=None):
     """Compute the shortest path lengths to target from all reachable nodes.
