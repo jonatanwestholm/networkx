@@ -54,7 +54,7 @@ __all__ = ['descendants',
 chaini = chain.from_iterable
 
 
-def _descendants(G, source):
+def descendants(G, source):
     """Returns all nodes reachable from `source` in `G`.
 
     Parameters
@@ -70,11 +70,10 @@ def _descendants(G, source):
     """
     if not G.has_node(source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
-    des = set(n for n, d in nx.shortest_path_length(G, source=source).items())
-    return des - {source}
+    return _reachable_from(G, source) - {source}
 
 
-def _ancestors(G, source):
+def ancestors(G, source):
     """Returns all nodes having a path to `source` in `G`.
 
     Parameters
@@ -90,26 +89,30 @@ def _ancestors(G, source):
     """
     if not G.has_node(source):
         raise nx.NetworkXError("The node %s is not in the graph." % source)
-    anc = set(n for n, d in nx.shortest_path_length(G, target=source).items())
-    return anc - {source}
-
-'''
-'''
-def descendants(G, source):
-    if not G.has_node(source):
-        raise nx.NetworkXError("The node %s is not in the graph." % source)
-    return _reachable_from(G, source) - {source}
-
-
-def ancestors(G, source):
-    if not G.has_node(source):
-        raise nx.NetworkXError("The node %s is not in the graph." % source)
     return _reachable_from(G._pred, source) - {source}
 
+def _reachable_from(G, source):
+    """
+    Given a graph `G`, return a set of 
+    nodes reachable from `source`, by a path in G.
+    Always includes `source` itself. 
 
-def _reachable_from(G, u):
-    visited = set([u])
-    stack = [u]
+    Terminates immediately if all nodes in `G` are
+    are shown to be reachable. 
+
+    Parameters
+    ----------
+    G : NetworkX Graph or DiGraph
+    source : node in `G`
+
+    Returns
+    -------
+    set()
+        The reachable nodes from source in G    
+    """
+
+    visited = set([source])
+    stack = [source]
     unvisited = len(G) - 1
     while stack:
         node = stack.pop()
@@ -122,8 +125,6 @@ def _reachable_from(G, u):
                     return visited
     return visited
 
-
-#__all__.extend(["descendants_dev", "ancestors_dev"])
 
 def has_cycle(G):
     """Decides whether the directed graph has a cycle."""
