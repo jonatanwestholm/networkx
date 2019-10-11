@@ -23,7 +23,7 @@ __all__ = ['bidirectional_shortest_path',
            'predecessor']
 
 
-def single_source_shortest_path_length(G, source, cutoff=None):
+def single_source_shortest_path_length(G, source, cutoff=None, dev=True):
     """Compute the shortest path lengths from source to all reachable nodes.
 
     Parameters
@@ -64,77 +64,90 @@ def single_source_shortest_path_length(G, source, cutoff=None):
     if cutoff is None:
         cutoff = float('inf')
     nextlevel = {source: 1}
-    return dict(_single_shortest_path_length(G.adj, nextlevel, cutoff))
+    if dev:
+        return dict(_single_shortest_path_length_dev(G.adj, nextlevel, cutoff))        
+    else:
+        return dict(_single_shortest_path_length(G.adj, nextlevel, cutoff))
 
 
-if 0:
-    def _single_shortest_path_length(adj, firstlevel, cutoff):
-        """Yields (node, level) in a breadth first search
+def _single_shortest_path_length(adj, firstlevel, cutoff):
+    """Yields (node, level) in a breadth first search
 
-        Shortest Path Length helper function
-        Parameters
-        ----------
-            adj : dict
-                Adjacency dict or view
-            firstlevel : dict
-                starting nodes, e.g. {source: 1} or {target: 1}
-            cutoff : int or float
-                level at which we stop the process
-        """
-        seen = {}                  # level (number of hops) when seen in BFS
-        level = 0                  # the current level
-        nextlevel = firstlevel     # dict of nodes to check at next level
+    Shortest Path Length helper function
+    Parameters
+    ----------
+        adj : dict
+            Adjacency dict or view
+        firstlevel : dict
+            starting nodes, e.g. {source: 1} or {target: 1}
+        cutoff : int or float
+            level at which we stop the process
+    """
+    N = len(adj)
+    seen = {}                  # level (number of hops) when seen in BFS
+    level = 0                  # the current level
+    nextlevel = set(firstlevel)     # dict of nodes to check at next level
 
-        while nextlevel and cutoff >= level:
-            thislevel = nextlevel  # advance to next level
-            nextlevel = {}         # and start a new list (fringe)
-            for v in thislevel:
-                if v not in seen:
-                    seen[v] = level  # set the level of vertex v
-                    nextlevel.update(adj[v])  # add neighbors of v
-                    yield (v, level)
-            level += 1
-        del seen
+    while nextlevel and cutoff >= level:
+        thislevel = nextlevel  # advance to next level
+        nextlevel = set([])         # and start a new list (fringe)
+        for v in thislevel:
+            if v not in seen:
+                seen[v] = level  # set the level of vertex v
+                yield (v, level)
+                #nextlevel.update(adj[v])  # add neighbors of v
+                if len(seen) == N:
+                    return
+                for w in adj[v]:
+                    if w not in seen:
+                        nextlevel.add(w)
 
-else:
-    def _single_shortest_path_length(adj, firstlevel, cutoff):
-        """Yields (node, level) in a breadth first search
-
-        Shortest Path Length helper function
-        Parameters
-        ----------
-            adj : dict
-                Adjacency dict or view
-            firstlevel : dict
-                starting nodes, e.g. {source: 1} or {target: 1}
-            cutoff : int or float
-                level at which we stop the process
-        """
-
-        # TODO: must we accept different levels in firstlevel?
-        u = next(iter(firstlevel))
-        level = firstlevel[u]
-        assert all(level == firstlevel[v] for v in firstlevel)
-
-        visited = set(firstlevel)
-        dq = deque(firstlevel.items())
-        yield from ((u, level-1) for u, level in dq)
-        unvisited = len(adj) - 1
-        while dq:
-            node, level = dq.popleft()
-            if level > cutoff:
-                return
-            for v in adj[node]:
-                if not v in visited:
-                    visited.add(v)
-                    dq.append((v, level+1))
-                    yield v, level
-                    unvisited -= 1
-                    if not unvisited:
-                        return
+        level += 1
+    del seen
 
 
-def single_target_shortest_path_length(G, target, cutoff=None):
+def _single_shortest_path_length_dev(adj, firstlevel, cutoff):
+    """Yields (node, level) in a breadth first search
+
+    Shortest Path Length helper function
+    Parameters
+    ----------
+        adj : dict
+            Adjacency dict or view
+        firstlevel : dict
+            starting nodes, e.g. {source: 1} or {target: 1}
+        cutoff : int or float
+            level at which we stop the process
+    """
+
+    # TODO: must we accept different levels in firstlevel?
+    # can do that efficiently with a heap
+
+    # check has been disabled because this function is not exposed
+    #u = next(iter(firstlevel))
+    #level = firstlevel[u]
+    #assert all(level == firstlevel[v] for v in firstlevel)
+
+    visited = set(firstlevel)
+    queue = deque(firstlevel.items()) # sorted by level, ascending
+    for u, level in queue:
+        yield u, level-1 # level 1 means distance 0 to source nodes
+    unvisited = len(adj) - 1
+    while queue:
+        node, level = queue.popleft()
+        if level > cutoff:
+            return
+        for v in adj[node]:
+            if not v in visited:
+                visited.add(v)
+                queue.append((v, level+1))
+                yield v, level
+                unvisited -= 1
+                if not unvisited: # all nodes seen: terminate
+                    return
+
+
+def single_target_shortest_path_length(G, target, cutoff=None, dev=True):
     """Compute the shortest path lengths to target from all reachable nodes.
 
     Parameters
@@ -178,10 +191,13 @@ def single_target_shortest_path_length(G, target, cutoff=None):
     # handle either directed or undirected
     adj = G.pred if G.is_directed() else G.adj
     nextlevel = {target: 1}
-    return _single_shortest_path_length(adj, nextlevel, cutoff)
+    if dev:
+        return dict(_single_shortest_path_length_dev(adj, nextlevel, cutoff))        
+    else:
+        return dict(_single_shortest_path_length(adj, nextlevel, cutoff))
 
 
-def all_pairs_shortest_path_length(G, cutoff=None):
+def all_pairs_shortest_path_length(G, cutoff=None, dev=True):
     """Computes the shortest path lengths between all nodes in `G`.
 
     Parameters
@@ -222,7 +238,7 @@ def all_pairs_shortest_path_length(G, cutoff=None):
     length = single_source_shortest_path_length
     # TODO This can be trivially parallelized.
     for n in G:
-        yield (n, length(G, n, cutoff=cutoff))
+        yield (n, length(G, n, cutoff=cutoff, dev=dev))
 
 
 def bidirectional_shortest_path(G, source, target):
