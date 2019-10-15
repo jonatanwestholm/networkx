@@ -64,13 +64,72 @@ def single_source_shortest_path_length(G, source, cutoff=None, dev=True):
     if cutoff is None:
         cutoff = float('inf')
     nextlevel = {source: 1}
-    if dev:
-        return dict(_single_shortest_path_length_dev(G.adj, nextlevel, cutoff))        
-    else:
+    if dev == "current":
         return dict(_single_shortest_path_length(G.adj, nextlevel, cutoff))
+    elif dev == "set":
+        return dict(_single_shortest_path_length_set(G.adj, nextlevel, cutoff))
+    elif dev == "set+check":
+        return dict(_single_shortest_path_length_check(G.adj, nextlevel, cutoff))
+    elif dev == "queue":
+        return dict(_single_shortest_path_length_queue(G.adj, nextlevel, cutoff))        
 
 
 def _single_shortest_path_length(adj, firstlevel, cutoff):
+    """Yields (node, level) in a breadth first search
+    Shortest Path Length helper function
+    Parameters
+    ----------
+        adj : dict
+            Adjacency dict or view
+        firstlevel : dict
+            starting nodes, e.g. {source: 1} or {target: 1}
+        cutoff : int or float
+            level at which we stop the process
+    """
+    seen = {}                  # level (number of hops) when seen in BFS
+    level = 0                  # the current level
+    nextlevel = firstlevel     # dict of nodes to check at next level
+
+    while nextlevel and cutoff >= level:
+        thislevel = nextlevel  # advance to next level
+        nextlevel = {}         # and start a new list (fringe)
+        for v in thislevel:
+            if v not in seen:
+                seen[v] = level  # set the level of vertex v
+                nextlevel.update(adj[v])  # add neighbors of v
+                yield (v, level)
+        level += 1
+    del seen
+
+
+def _single_shortest_path_length_set(adj, firstlevel, cutoff):
+    """Yields (node, level) in a breadth first search
+    Shortest Path Length helper function
+    Parameters
+    ----------
+        adj : dict
+            Adjacency dict or view
+        firstlevel : dict
+            starting nodes, e.g. {source: 1} or {target: 1}
+        cutoff : int or float
+            level at which we stop the process
+    """
+    seen = {}                  # level (number of hops) when seen in BFS
+    level = 0                  # the current level
+    nextlevel = set(firstlevel)     # set of nodes to check at next level
+    while nextlevel and cutoff >= level:
+        thislevel = nextlevel  # advance to next level
+        nextlevel = set([])         # and start a new set (fringe)
+        for v in thislevel:
+            if v not in seen:
+                seen[v] = level  # set the level of vertex v
+                nextlevel.update(adj[v])  # add neighbors of v
+                yield (v, level)
+        level += 1
+    del seen
+
+
+def _single_shortest_path_length_check(adj, firstlevel, cutoff):
     """Yields (node, level) in a breadth first search
 
     Shortest Path Length helper function
@@ -86,27 +145,22 @@ def _single_shortest_path_length(adj, firstlevel, cutoff):
     N = len(adj)
     seen = {}                  # level (number of hops) when seen in BFS
     level = 0                  # the current level
-    nextlevel = set(firstlevel)     # dict of nodes to check at next level
-
+    nextlevel = set(firstlevel)     # set of nodes to check at next level
     while nextlevel and cutoff >= level:
         thislevel = nextlevel  # advance to next level
-        nextlevel = set([])         # and start a new list (fringe)
+        nextlevel = set([])         # and start a new set (fringe)
         for v in thislevel:
             if v not in seen:
                 seen[v] = level  # set the level of vertex v
+                nextlevel.update(adj[v])  # add neighbors of v
                 yield (v, level)
-                #nextlevel.update(adj[v])  # add neighbors of v
                 if len(seen) == N:
                     return
-                for w in adj[v]:
-                    if w not in seen:
-                        nextlevel.add(w)
-
         level += 1
     del seen
 
 
-def _single_shortest_path_length_dev(adj, firstlevel, cutoff):
+def _single_shortest_path_length_queue(adj, firstlevel, cutoff):
     """Yields (node, level) in a breadth first search
 
     Shortest Path Length helper function
@@ -197,7 +251,7 @@ def single_target_shortest_path_length(G, target, cutoff=None, dev=True):
         return dict(_single_shortest_path_length(adj, nextlevel, cutoff))
 
 
-def all_pairs_shortest_path_length(G, cutoff=None, dev=True):
+def all_pairs_shortest_path_length(G, cutoff=None, dev=""):
     """Computes the shortest path lengths between all nodes in `G`.
 
     Parameters
