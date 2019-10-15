@@ -17,7 +17,7 @@ import os.path
 
 import networkx as nx
 
-__all__ = ['graph_atlas', 'graph_atlas_g']
+__all__ = ['graph_atlas', 'graph_atlas_g', '_generate_graphs']
 
 #: The total number of graphs in the atlas.
 #:
