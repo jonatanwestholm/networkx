@@ -149,11 +149,11 @@ def _single_shortest_path_length_check(adj, firstlevel, cutoff):
     while nextlevel and cutoff >= level:
         thislevel = nextlevel  # advance to next level
         nextlevel = set([])         # and start a new set (fringe)
-        found = set([])
+        found = []
         for v in thislevel:
             if v not in seen:
                 seen[v] = level  # set the level of vertex v
-                found.add(v)
+                found.append(v)
                 yield (v, level)
         if len(seen) == n:
             return
